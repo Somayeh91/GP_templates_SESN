@@ -15,4 +15,5 @@ npm-debug.log*
 *.pdf
 *.png
 *.csv
+*.tex
 
