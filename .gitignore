@@ -8,6 +8,8 @@ npm-debug.log
 .npm
 .eslintcache
 logs/
+.ipynb_checkpoints
+__pycache__/
 *.log
 npm-debug.log*
 *.pdf
