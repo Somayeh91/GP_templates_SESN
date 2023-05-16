@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import argparse
 
 try:
     os.environ['SESNPATH']
@@ -22,37 +23,48 @@ if cmd_folder not in sys.path:
 
 from matplotlib.ticker import AutoMinorLocator
 
-font = {'family': 'normal',
-        'size': 20}
-
-plt.rc('font', **font)
+# plt.rc('font', **font)
 plt.rcParams['font.family'] = 'serif'
 plt.rcParams['font.serif'] = ['Times New Roman'] + plt.rcParams['font.serif']
+plt.rcParams["axes.labelweight"] = "normal"
+plt.rcParams['font.weight'] = 'normal'
 
 templates = {}
 
-bands = ['U', 'u', 'B', 'V', 'R', 'I', 'g', 'r', 'i', 'J', 'H', 'K', 'w1', 'w2', 'm2']
+
+def parse_options():
+    """Function to handle options speficied at command line
+    """
+    parser = argparse.ArgumentParser(description='Process input parameters.')
+    parser.add_argument('-dir', action='store', default=None,
+                        help='output_directory where the figures should be saved.')
+    arguments = parser.parse_args()
+    return arguments
+
+
+args = parse_options()
+
+# Define your output directory
+if not args.dir is None:
+    output_directory = args.dir
+else:
+    output_directory = './../../GPSNtempl_output/'
+
+bands = ['u', 'U', 'B', 'g', 'r', 'i', 'V', 'R', 'I', 'J', 'H', 'K', 'w1', 'm2', 'w2']
 
 for b in bands:
 
     templates[b] = {}
 
-    path = "ubertemplates/UberTemplate_%s.pkl" % (b + 'p' if b in ['u', 'r', 'i']
-                                                  else b)
+    path = os.getenv("SESNPATH") + "maketemplates/outputs/ubertemplates/UberTemplate_%s.pkl" %\
+                                    (b + 'p' if b in ['u', 'r', 'i'] else b)
     templates_ = pkl.load(open(path, "rb"))
-
-    #         print(templates_['rollingMedian'])
 
     templates[b] = templates_
 
     if np.nansum(templates_['med_smoothed']) == 0:
         print(b + ' band has no Ibc templates.')
         continue
-
-# rc('text', usetex=True)
-# rc('axes', linewidth=2)
-# rc('font', weight='bold')
-# rcParams['text.latex.preamble'] = [r'\usepackage{sfmath} \boldmath']
 
 b_c = 'V'
 fig, axs = plt.subplots(5, 3, figsize=(25, 20), sharex=True, sharey=True)
@@ -113,22 +125,28 @@ for i, b in enumerate(templates.keys()):
         axs[4, i - 12].text(94, 0.5, b, weight='bold', size=30)
 plt.ylim(4, -1)
 
-for ax in np.concatenate(axs):
+for i, ax in enumerate(np.concatenate(axs)):
     ax.tick_params(axis="both", direction="in", which="major", right=True, top=True, size=7, labelsize=30, width=2)
     ax.tick_params(axis="both", direction="in", which="minor", right=True, top=True, size=4, width=2)
     ax.xaxis.set_minor_locator(AutoMinorLocator(4))
     ax.yaxis.set_minor_locator(AutoMinorLocator(4))
-#     ax.yaxis.set_minor_locator(AutoMinorLocator(4))
+    if i % 3 == 0:
+        ax.set_yticks([-1, 0, 1, 2, 3, 4])
+        ax.set_yticklabels(['', '0', '1', '2', '3', ''])
+
+
 axs[4, 0].set_xticks([0, 50, 100])
 axs[4, 0].set_xticklabels(['0', '50', '100'])
+
+
 plt.subplots_adjust(hspace=0, wspace=0)
 
-fig.text(0.5, 0.04, 'Phase (days)', ha='center', size=30)
-fig.text(0.07, 0.5, 'Relative Magnitude', va='center', rotation='vertical', size=30)
-plt.savefig('outputs/allbands_rollingmedian_4.pdf', bbox_inches='tight')
+fig.text(0.5, 0.04, 'Phase (days)', ha='center', size=40)
+fig.text(0.07, 0.5, 'Relative Magnitude', va='center', rotation='vertical', size=40)
+fig.savefig(os.getenv("SESNPATH") + "maketemplates/outputs/allbands_Ibc.pdf", bbox_inches='tight')
+plt.savefig(output_directory + 'allbands_Ibc.pdf', bbox_inches='tight')
 
 # Compare Ibc templates to D11 and T15
-
 
 D11_V = np.loadtxt('lit_templates/D11_V_template.txt', skiprows=3)
 D11_R = np.loadtxt('lit_templates/D11_R_template.txt', skiprows=3)
@@ -151,7 +169,7 @@ axs[0].fill_between(templates['V']['phs'] - V_max_t,
                     templates['V']['pc75_smoothed'],
                     color='#1b7837', alpha=0.3)
 axs[0].invert_yaxis()
-axs[0].legend(loc=1, prop={'size': 50})
+axs[0].legend(loc=1, prop={'size': 40})
 
 R_max_ind = np.nanargmin(templates['R']['med_smoothed'][
                              (templates['R']['phs'] < max(D11_R[:, 0])) & (templates['R']['phs'] > min(D11_R[:, 0]))])
@@ -167,10 +185,8 @@ axs[1].fill_between(templates['R']['phs'],
                     templates['R']['pc75_smoothed'],
                     color='#b2182b', alpha=0.3)
 
-axs[1].legend(loc=1, prop={'size': 50})
+axs[1].legend(loc=1, prop={'size': 40})
 axs[1].invert_yaxis()
-
-
 
 for ax in (axs):
     ax.tick_params(axis="both", direction="in", which="major", right=True, top=True, size=7, labelsize=30, width=2)
@@ -186,7 +202,8 @@ axs[1].set_ylim(4, -0.5)
 fig.text(0.5, 0.0, 'Phase (days)', ha='center', size=40)
 fig.text(0.05, 0.5, 'Relative Magnitude', va='center', rotation='vertical', size=40)
 plt.subplots_adjust(hspace=0, wspace=0)
-plt.savefig('outputs/compare_with_D11_4.pdf', bbox_inches='tight')
+fig.savefig(os.getenv("SESNPATH") + "maketemplates/outputs/compare_with_D11_4.pdf", bbox_inches='tight')
+plt.savefig(output_directory + 'compare_with_D11_4.pdf', bbox_inches='tight')
 
 T15['Mu'] = -2.5 * np.log10(T15['Fu'] / T15['Fu'][0])
 T15['Mr'] = -2.5 * np.log10(T15['Fr'] / T15['Fr'][0])
@@ -206,8 +223,7 @@ axs[0].fill_between(templates['u']['phs'] - u_max_t,
                     color='black', alpha=0.3)
 
 axs[0].invert_yaxis()
-axs[0].legend(loc=1, prop={'size': 50})
-
+axs[0].legend(loc=1, prop={'size': 40})
 
 r_max_ind = np.nanargmin(templates['r']['med_smoothed'])
 r_max_t = templates['r']['phs'][r_max_ind]
@@ -221,7 +237,7 @@ axs[1].fill_between(templates['r']['phs'] - r_max_t,
                     templates['r']['pc75_smoothed'],
                     color='#b2182b', alpha=0.3)
 
-axs[1].legend(loc=1, prop={'size': 50})
+axs[1].legend(loc=1, prop={'size': 40})
 axs[1].invert_yaxis()
 
 i_max_ind = np.nanargmin(templates['i']['med_smoothed'])
@@ -236,10 +252,8 @@ axs[2].fill_between(templates['i']['phs'][:len(templates['i']['med_smoothed'])] 
                     templates['i']['pc25_smoothed'][:len(templates['i']['med_smoothed'])],
                     templates['i']['pc75_smoothed'][:len(templates['i']['med_smoothed'])],
                     color='#542788', alpha=0.3)
-axs[2].legend(loc=1, prop={'size': 50})
+axs[2].legend(loc=1, prop={'size': 40})
 axs[2].invert_yaxis()
-
-
 
 for ax in (axs):
     ax.tick_params(axis="both", direction="in", which="major", right=True, top=True, size=7, labelsize=30, width=2)
@@ -254,4 +268,5 @@ axs[2].set_ylim(4, -0.5)
 fig.text(0.5, 0.05, 'Phase (days)', ha='center', size=40)
 fig.text(0.07, 0.5, 'Relative Magnitude', va='center', rotation='vertical', size=40)
 plt.subplots_adjust(hspace=0, wspace=0)
-plt.savefig('outputs/compare_with_T15_5.pdf', bbox_inches='tight')
+fig.savefig(os.getenv("SESNPATH") + "maketemplates/outputs/compare_with_T15.pdf", bbox_inches='tight')
+plt.savefig(output_directory + 'compare_with_T15.pdf', bbox_inches='tight')
