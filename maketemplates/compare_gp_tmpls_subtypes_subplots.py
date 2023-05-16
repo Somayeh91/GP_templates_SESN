@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib import gridspec
 from itertools import combinations
 from tqdm import tqdm
+import argparse
 
 try:
     os.environ['SESNPATH']
@@ -22,8 +23,42 @@ cmd_folder = os.getenv("SESNCFAlib") + "/templates"
 if cmd_folder not in sys.path:
     sys.path.insert(0, cmd_folder)
 
+
+def parse_options():
+    """Function to handle options speficied at command line
+    """
+    parser = argparse.ArgumentParser(description='Process input parameters.')
+    parser.add_argument('-dir', action='store', default=None,
+                        help='output_directory where the figures should be saved.')
+    arguments = parser.parse_args()
+    return arguments
+
+
+args = parse_options()
+
+# Define your output directory
+if not args.dir is None:
+    output_directory = args.dir
+else:
+    output_directory = './../../GPSNtempl_output/'
+
 SNTYPES = ['Ib', 'IIb', 'Ic', 'Ic-bl', 'Ibn']
-bands = ['U', 'u', 'B','g', 'V', 'R', 'r', 'i', 'I','J','H','K','m2','w1','w2']
+bands = {'u': [0, 1],
+         'U': [1, 1],
+         'B': [2, 1],
+         'g': [3, 1],
+         'r': [4, 1],
+         'i': [5, 1],
+         'V': [6, 1],
+         'R': [7, 1],
+         'I': [8, 1],
+         'J': [9, 1],
+         'H': [10, 1],
+         'K': [11, 1],
+         'w2': [12, 1],
+         'm2': [13, 1],
+         'w1': [14, 1]}
+
 colorTypes = {'IIb': 'FireBrick',
               'Ib': 'SteelBlue',
               'Ic': 'DarkGreen',
@@ -55,13 +90,11 @@ if __name__ == '__main__':
             lim00 = [-3.0 - shift, 0.5]
             lim01 = [-2.875 - shift, -2.525 - shift]
 
-            lim10 = [-2.65- shift, -2.65- shift]
-            lim11 = [-2.8- shift, -2.8- shift]
+            lim10 = [-2.65 - shift, -2.65 - shift]
+            lim11 = [-2.8 - shift, -2.8 - shift]
 
             lim10_text = -2.6 - shift
             lim11_text = -2.75 - shift
-
-
 
         band_new = []
 
@@ -81,13 +114,12 @@ if __name__ == '__main__':
             if path1 in directory and path2 in directory:
                 pass
             else:
-                # print(tp1, tp2, b)
+                bands[b][1] = 0
                 continue
 
             band_new.append(b)
 
         n = len(band_new)
-
 
         fig = plt.figure(figsize=(44, 54))
 
@@ -96,7 +128,13 @@ if __name__ == '__main__':
         else:
             gs0 = gridspec.GridSpec(int(n / 3) + 1, 3, wspace=0.01, hspace=0.01, top=0.99, bottom=0.1)
 
+        marker = 0
         for c, b in enumerate(band_new):
+            subplot_num = bands[b][0]
+            if subplot_num > n - 1:
+                subplot_num = c
+                continue
+            
 
             bb = b
             if b == 'i':
@@ -107,13 +145,15 @@ if __name__ == '__main__':
                 bb = 'rp'
 
             if c == 0:
-                gs00 = gridspec.GridSpecFromSubplotSpec(2, 1, height_ratios=[4, 1], hspace=0, subplot_spec=gs0[c])
+                gs00 = gridspec.GridSpecFromSubplotSpec(2, 1, height_ratios=[4, 1], hspace=0,
+                                                        subplot_spec=gs0[subplot_num])
                 a00 = fig.add_subplot(gs00[0])
                 a11 = fig.add_subplot(gs00[1])
                 a0 = fig.add_subplot(gs00[0])
                 a1 = fig.add_subplot(gs00[1])
             else:
-                gs00 = gridspec.GridSpecFromSubplotSpec(2, 1, height_ratios=[4, 1], hspace=0, subplot_spec=gs0[c])
+                gs00 = gridspec.GridSpecFromSubplotSpec(2, 1, height_ratios=[4, 1], hspace=0,
+                                                        subplot_spec=gs0[subplot_num])
                 a0 = fig.add_subplot(gs00[0], sharey=a00, sharex=a00)
                 a1 = fig.add_subplot(gs00[1], sharex=a00, sharey=a11)
 
@@ -185,15 +225,16 @@ if __name__ == '__main__':
 
             a0.set_ylim(lim00)
             a1.set_ylim(lim01)
-            a0.tick_params(axis="both", direction="in", which="major", right=True, top=True, size=7, labelsize=35, width=2)
+            a0.tick_params(axis="both", direction="in", which="major", right=True, top=True, size=7, labelsize=35,
+                           width=2)
             a1.tick_params(axis="x", direction="in", which="major", top=True, size=7, labelsize=35, width=2)
             a1.tick_params(axis="y", which="both", right=False, left=False, labelleft=False)
             a0.text(0.1, 0.1, "%s" % (b), size=60, transform=a0.transAxes)
 
-            if (c + 1) % 3 != 1:
+            if (subplot_num + 1) % 3 != 1:
                 a0.tick_params(axis='y', which='both', right=True, left=True, labelleft=False)
 
-            if c == len(band_new) - 1 or c == len(band_new) - 2 or c == len(band_new) - 3:
+            if subplot_num == len(band_new) - 1 or subplot_num == len(band_new) - 2 or subplot_num == len(band_new) - 3:
                 pass
             else:
                 a1.tick_params(axis='x', which='both', top=True, bottom=True, labelbottom=False)
@@ -203,11 +244,10 @@ if __name__ == '__main__':
 
             if c == 1:
                 h, l = a0.get_legend_handles_labels()
-                a0.legend(h, l, loc='upper center', ncol=2, prop={'size': 60}, bbox_to_anchor=(0.5, 1.15))
+        fig.legend(h, l, loc='upper center', ncol=2, prop={'size': 60}, bbox_to_anchor=(0.5, 1.03))
 
         fig.text(0.07, 0.5, 'Relative magnitude', va='center', rotation='vertical', size=60)
         fig.text(0.45, 0.08, 'Phase (days)', va='center', size=60)
 
-        fig.savefig(
-            os.getenv("SESNPATH") + "maketemplates/outputs/GPs_2022/compare_gp_tmpls/GPcompare_subtype_pairs_%s_%s_2.pdf" %
-            (tp1, tp2), bbox_inches='tight')
+        fig.savefig(output_directory + "GPs_2022/compare_gp_tmpls/GPcompare_subtype_pairs_%s_%s.pdf" %
+                    (tp1, tp2), bbox_inches='tight')

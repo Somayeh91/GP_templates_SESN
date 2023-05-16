@@ -16,7 +16,7 @@ if cmd_folder not in sys.path:
     sys.path.insert(0, cmd_folder)
 
 SNTYPES = ['IIb', 'Ib', 'Ibn', 'Ic', 'Ic-bl']
-bands = ['up', 'U', 'B', 'g', 'rp', 'ip', 'V', 'R', 'I', 'J', 'H', 'K', 'w1', 'm2', 'w2']
+bands = ['up', 'U', 'B', 'g', 'rp', 'ip', 'V', 'R', 'I', 'J', 'H', 'K', 'w2', 'm2', 'w1']
 
 colorTypes = {'IIb': 'FireBrick',
               'Ib': 'SteelBlue',

@@ -50,7 +50,7 @@ if not args.dir is None:
 else:
     output_directory = './../../GPSNtempl_output/'
 
-bands = ['u', 'U', 'B', 'g', 'r', 'i', 'V', 'R', 'I', 'J', 'H', 'K', 'w1', 'm2', 'w2']
+bands = ['u', 'U', 'B', 'g', 'r', 'i', 'V', 'R', 'I', 'J', 'H', 'K', 'w2', 'm2', 'w1']
 
 for b in bands:
 
